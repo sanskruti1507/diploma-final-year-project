@@ -1,105 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Sign Up - Sakhi Enterprises</title>
+<meta charset="UTF-8" />
+<title>Sign Up - Sakhi Enterprises</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e9f7ee; /* Light green background */
-        }
+body {
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9f7ee;
+}
 
-        .background-overlay {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+.background-overlay {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-        .login-box {
-            background-color: #ffffff; /* White card */
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
-            width: 330px;
-            text-align: center;
-            border-top: 4px solid #1b8f3a; /* Green top border */
-        }
+.login-box {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+    width: 330px;
+    text-align: center;
+    border-top: 4px solid #1b8f3a;
+}
 
-        .company-logo {
-            width: 100px;
-            margin-bottom: 10px;
-        }
+.company-logo {
+    width: 100px;
+    margin-bottom: 10px;
+}
 
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #1b8f3a; /* Green outline */
-        }
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #1b8f3a;
+}
 
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #1b8f3a; /* Green button */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #1b8f3a;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
 
-        button:hover {
-            background-color: #0b6b32; /* Darker green */
-        }
-    </style>
+button:hover {
+    background-color: #0b6b32;
+}
+
+/* ✅ Error message style */
+.error {
+    color: red;
+    font-size: 12px;
+    text-align: left;
+    margin-top: -8px;
+    margin-bottom: 5px;
+}
+</style>
 </head>
 
 <body>
-    <div class="background-overlay">
-        <div class="login-box">
+<div class="background-overlay">
+<div class="login-box">
 
-            <img src="/assets/images/logo.png" class="company-logo" alt="Sakhi Enterprises Logo">
+<img src="/assets/images/logo.png" class="company-logo">
 
-            <form action="/signup" method="POST">
-                
-                <input type="text" name="username" placeholder="Username" required>
+<form action="/signup" method="POST" onsubmit="return validateForm()">
 
-                <input type="email" name="email" placeholder="Email" required>
+<input type="text" id="username" name="username" placeholder="Username" required>
+<div class="error" id="usernameError"></div>
 
-                <input type="password" name="password" placeholder="Password" required>
+<input type="email" id="email" name="email" placeholder="Email" required>
+<div class="error" id="emailError"></div>
 
-                <input type="tel" name="phone" placeholder="Phone Number" required>
+<input type="password" id="password" name="password" placeholder="Password" required>
+<div class="error" id="passwordError"></div>
 
-                <input type="text" name="address" placeholder="Address" required>
+<input type="tel" id="phone" name="phone" placeholder="Phone Number" required>
+<div class="error" id="phoneError"></div>
 
-                <select name="visit_reason" required>
-                    <option value="">Why are you visiting this site? 👇</option>
-                    <option value="ordering">For Ordering</option>
-                    <option value="viewing">For Viewing</option>
-                    <option value="contacting">For Contacting</option>
-                    <option value="other">Other</option>
-                </select> 
-                 <button type="submit">signup</button>
+<input type="text" id="address" name="address" placeholder="Address" required>
+<div class="error" id="addressError"></div>
 
+<select name="visit_reason" required>
+    <option value="">Why are you visiting this site? 👇</option>
+    <option value="ordering">For Ordering</option>
+    <option value="viewing">For Viewing</option>
+    <option value="contacting">For Contacting</option>
+    <option value="other">Other</option>
+</select> 
 
+<button type="submit">signup</button>
 
-            </form>
+</form>
 
-        </div>
-    </div>
+</div>
+</div>
+
+<script>
+
+function validateForm() {
+
+    let valid = true;
+
+    // Clear previous errors
+    document.querySelectorAll(".error").forEach(e => e.innerText = "");
+
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
+
+    // ✅ Username validation
+    const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+        document.getElementById("usernameError").innerText =
+            "Username must be 3-20 characters (letters & numbers only)";
+        valid = false;
+    }
+
+    // ✅ Email validation
+    const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+    if (!emailRegex.test(email)) {
+        document.getElementById("emailError").innerText =
+            "Enter a valid email (example@gmail.com)";
+        valid = false;
+    }
+
+    // ✅ Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+    if (!passwordRegex.test(password)) {
+        document.getElementById("passwordError").innerText =
+            "Password must have 1 uppercase, 1 lowercase, 1 number, 1 special character";
+        valid = false;
+    }
+
+    // ✅ Phone validation (India)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+        document.getElementById("phoneError").innerText =
+            "Enter valid 10-digit mobile number";
+        valid = false;
+    }
+
+    // ✅ Address validation
+    if (address.length < 10) {
+        document.getElementById("addressError").innerText =
+            "Address must be at least 10 characters";
+        valid = false;
+    }
+
+    return valid;
+}
+
+</script>
+
 </body>
 </html>

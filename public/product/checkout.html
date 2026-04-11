@@ -99,10 +99,6 @@ h2{margin-top:0;color:var(--green);}
 
     <hr>
 
-    <button class="btn change-btn" onclick="goToShop()">
-      ➕ Add More Products
-    </button>
-
     <h2>Order Summary</h2>
     <div id="summary-items"></div>
 
@@ -112,16 +108,9 @@ h2{margin-top:0;color:var(--green);}
     </div>
 
     <div style="display: flex; gap: 10px;">
-  
-  <button id="payBtn" class="btn">
-    Online Payment
-  </button>
-
-  <button id="codBtn" class="btn">
-    Cash on Delivery
-  </button>
-
-</div>
+      <button id="payBtn" class="btn">Online Payment</button>
+      <button id="codBtn" class="btn">Cash on Delivery</button>
+    </div>
 
   </div>
 </div>
@@ -139,55 +128,26 @@ let checkoutData = {};
 
 async function loadCheckout() {
 
-  const params = new URLSearchParams(window.location.search);
-  const itemId = params.get("itemId");
-
-  // 1️⃣ Single item checkout from cart
-  if (itemId) {
-    try {
-      const res = await fetch(`${BACKEND}/cart/${itemId}`, { credentials: "include" });
-      if (!res.ok) { alert("Item not found"); return; }
-      const item = await res.json();
-      checkoutData.items = [item];
-      checkoutData.total = item.price * item.quantity;
-      document.getElementById("summary-items").innerHTML = `
-        <div class="summary-item">
-          <div><strong>${item.name}</strong><br>Qty: ${item.quantity}</div>
-          <strong>₹${item.price * item.quantity}</strong>
-        </div>
-      `;
-      document.getElementById("summary-total").textContent = "₹" + checkoutData.total;
-      document.getElementById("payBtn").textContent = "Pay ₹" + checkoutData.total;
-      await loadAddress();
-      return;
-    } catch (err) { console.error(err); alert("Failed to load item"); return; }
-  }
-
-  // 2️⃣ Handle direct order (from Buy Now)
   const directOrder = sessionStorage.getItem("directOrder");
+
   if (directOrder) {
     const item = JSON.parse(directOrder);
-    let existingDirectOrders = JSON.parse(sessionStorage.getItem("directOrders")) || [];
-    existingDirectOrders.push(item);
-    sessionStorage.setItem("directOrders", JSON.stringify(existingDirectOrders));
+    checkoutData.items = [item];
     sessionStorage.removeItem("directOrder");
+  } else {
+    let cartItems = [];
+    try {
+      const res = await fetch(`${BACKEND}/cart`, { credentials: "include" });
+      if (res.ok) cartItems = await res.json();
+    } catch (err) {
+      console.error(err);
+    }
+    checkoutData.items = [...cartItems];
   }
 
-  // 3️⃣ Merge cart + direct orders (FIXED LINES)
-  let cartItems = [];
-  try {
-    const res = await fetch(`${BACKEND}/cart`, { credentials: "include" });
-    if (res.ok) { cartItems = await res.json(); }
-  } catch (err) { console.error("Failed to fetch cart", err); }
-
-  const allDirectOrders = JSON.parse(sessionStorage.getItem("directOrders")) || [];
-
-  // Merge cart + direct orders
-  checkoutData.items = [...cartItems, ...allDirectOrders];
-
-  // Render summary
   let total = 0;
   let html = "";
+
   if (checkoutData.items.length === 0) {
     html = "<p>Your cart is empty.</p>";
   } else {
@@ -203,12 +163,13 @@ async function loadCheckout() {
   }
 
   checkoutData.total = total;
-  document.getElementById("summary-items").innerHTML = html;
-  document.getElementById("summary-total").textContent = "₹" + total;
-  document.getElementById("payBtn").textContent = "Pay ₹" + total;
+document.getElementById("summary-items").innerHTML = html;
+document.getElementById("summary-total").textContent = "₹" + total;
+document.getElementById("payBtn").textContent = "Online Payment";
 
   await loadAddress();
 }
+
 /* ================= LOAD ADDRESS ================= */
 
 async function loadAddress() {
@@ -217,20 +178,11 @@ async function loadAddress() {
   });
   const data = await res.json();
   checkoutData.address = data.address;
-  renderAddress(data);
-}
-
-function renderAddress(data){
 
   if (!data.address) {
-    document.getElementById("address-box").innerHTML = `
-      <strong>No address found</strong><br>
-      Please add address in profile
-    `;
+    document.getElementById("address-box").innerHTML = "No address found";
   } else {
-
     const addr = data.address;
-
     document.getElementById("address-box").innerHTML = `
       <strong>${data.username}</strong><br>
       ${addr.fullName}<br>
@@ -244,18 +196,12 @@ function renderAddress(data){
 
 loadCheckout();
 
-/* ================= PAYMENT (UNCHANGED) ================= */
+/* ================= ONLINE PAYMENT ================= */
 
 document.getElementById("payBtn").addEventListener("click", async () => {
 
   if (!checkoutData.total || checkoutData.total <= 0) {
     alert("Cart is empty");
-    return;
-  }
-
-  if (!checkoutData.address) {
-    alert("Please add delivery address first");
-    window.location.href = "/profile.html";
     return;
   }
 
@@ -267,24 +213,15 @@ document.getElementById("payBtn").addEventListener("click", async () => {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("token")
       },
-      body: JSON.stringify({
-        amount: checkoutData.total
-      })
+      body: JSON.stringify({ amount: checkoutData.total })
     });
 
     const order = await orderRes.json();
-
-    if (!order.id) {
-      alert("Order creation failed");
-      return;
-    }
 
     const options = {
       key: RAZORPAY_KEY,
       amount: order.amount,
       currency: "INR",
-      name: "Sakhi Enterprises",
-      description: "Order Payment",
       order_id: order.id,
 
       handler: async function (response) {
@@ -303,61 +240,50 @@ document.getElementById("payBtn").addEventListener("click", async () => {
             })
           });
 
-         await fetch(`${BACKEND}/order/place`, {
-  method: "POST",
-  credentials: "include",   // ⭐ THIS IS THE FIX
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    items: checkoutData.items,
-    address: checkoutData.address
-  })
-});
+          await fetch(`${BACKEND}/order/place`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: checkoutData.items,
+              address: checkoutData.address
+            })
+          });
 
+         
+          for (let item of checkoutData.items) {
+            if (item._id) {
+              await fetch(`${BACKEND}/cart/remove/${item._id}`, {
+                method: "DELETE",
+                credentials: "include"
+              });
+            }
+          }
 
-          // Smart cart handling (safe for both direct & full cart checkout)
+         
+          const orderData = {
+  items: checkoutData.items ? [...checkoutData.items] : [],
+  total: checkoutData.total || 0,
+  payment: "ONLINE",
+  orderId: "ORD" + Date.now(), 
+  date: new Date().toLocaleString()
+};
 
-if (sessionStorage.getItem("directOrders")) {
+          sessionStorage.setItem("lastOrder", JSON.stringify(orderData));
+          console.log("Saved Order:", JSON.parse(sessionStorage.getItem("lastOrder")));
 
-  for (let item of checkoutData.items) {
+          console.log("Saved Order:", orderData);
 
-    if (item._id) {
-      await fetch(`${BACKEND}/cart/remove/${item._id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-    }
-
-  }
-
-} else {
-
- // Remove only ordered items from cart
-for (let item of checkoutData.items) {
-
-  if (item._id) {
-    await fetch(`${BACKEND}/cart/remove/${item._id}`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-  }
-
-}
-}
-          sessionStorage.removeItem("directOrders");
-
-          alert("Order Placed Successfully!");
-          window.location.href = "success.html";
+          setTimeout(() => {
+            window.location.href = "success.html";
+          }, 300);
 
         } catch (err) {
           console.error(err);
           alert("Something went wrong");
         }
 
-      },
-
-      theme: { color: "#2e7d32" }
+      }
     };
 
     const rzp = new Razorpay(options);
@@ -365,78 +291,39 @@ for (let item of checkoutData.items) {
 
   } catch (err) {
     console.error(err);
-    alert("Payment failed. Try again.");
+    alert("Payment failed");
   }
 
 });
 
-// ================= COD PAYMENT =================
+/* ================= COD ================= */
 
 document.getElementById("codBtn").addEventListener("click", async () => {
 
-  if (!checkoutData.total || checkoutData.total <= 0) {
-    alert("Cart is empty");
-    return;
-  }
+  await fetch(`${BACKEND}/order/place`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      items: checkoutData.items,
+      address: checkoutData.address,
+      paymentMethod: "COD"
+    })
+  });
 
-  if (!checkoutData.address) {
-    alert("Please add delivery address first");
-    window.location.href = "/profile.html";
-    return;
-  }
+  sessionStorage.setItem("lastOrder", JSON.stringify({
+    items: [...checkoutData.items],
+    total: checkoutData.total,
+    payment: "COD",
+    orderId: "ORD" + Date.now(),
+    date: new Date().toLocaleString()
+  }));
 
-  try {
-
-    await fetch(`${BACKEND}/order/place`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        items: checkoutData.items,
-        address: checkoutData.address,
-        paymentMethod: "COD"
-      })
-    });
-
-    for (let item of checkoutData.items) {
-      if (item._id) {
-        await fetch(`${BACKEND}/cart/remove/${item._id}`, {
-          method: "DELETE",
-          credentials: "include"
-        });
-      }
-    }
-
-    sessionStorage.setItem("lastOrder", JSON.stringify({
-      items: [...checkoutData.items],
-      total: checkoutData.total,
-      payment: "COD",
-      orderId: "ORD" + Date.now(),
-      date: new Date().toLocaleString()
-    }));
-
-    sessionStorage.removeItem("directOrders");
-    sessionStorage.removeItem("directOrder");
-
-    window.location.href = "success.html";
-
-  } catch (err) {
-    console.error(err);
-    alert("COD failed");
-  }
-
+  window.location.href = "success.html";
 });
-
-/* ================= NAV ================= */
 
 function changeAddress() {
   window.location.href = "/profile.html";
-}
-
-function goToShop() {
-  window.location.href = "product.html";
 }
 
 </script>

@@ -35,7 +35,7 @@
       color: white;
       padding: 30px 20px;
       float: left;
-      min-height: 500px;
+      min-height: 800px;
     }
 
     .sidebar h2 {
@@ -125,6 +125,12 @@
         grid-template-columns: 1fr;
       }
     }
+    .error {
+  color: red;
+  font-size: 12px;
+  margin-top: -5px;
+  margin-bottom: 5px;
+}
   </style>
 </head>
 
@@ -252,44 +258,49 @@ fetch('/api/profile/profiledata', { credentials: "include" })
 
       ${addressSection}
 
-      <div id="address-form"
-           style="display:none; grid-column:1/-1; margin-top:20px;">
+     <div id="address-form"
+     style="display:none; grid-column:1/-1; margin-top:20px;">
 
-        <h4 style="color:#0b6b33; margin-bottom:10px;">
-          ${hasAddress ? "Update Address" : "Add New Address"}
-        </h4>
+  <h4 style="color:#0b6b33; margin-bottom:10px;">
+    ${hasAddress ? "Update Address" : "Add New Address"}
+  </h4>
 
-        <input id="new-name" placeholder="Full Name"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-name" placeholder="Full Name"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="nameError"></div>
 
-        <input id="new-address" placeholder="Street Address"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-address" placeholder="Street Address"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="streetError"></div>
 
-        <input id="new-city" placeholder="City"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-city" placeholder="City"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="cityError"></div>
 
-        <input id="new-state" placeholder="State"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-state" placeholder="State"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="stateError"></div>
 
-        <input id="new-pincode" placeholder="Postal Code"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-pincode" placeholder="Postal Code"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="pincodeError"></div>
 
-        <input id="new-country" placeholder="Country"
-               style="margin:5px 0;padding:8px;width:100%">
+  <input id="new-country" placeholder="Country"
+         style="margin:5px 0;padding:8px;width:100%">
+  <div class="error" id="countryError"></div>
 
+  <button onclick="saveAddress()"
+    style="margin-top:10px;
+           padding:10px 16px;
+           background:#2e7d32;
+           color:white;
+           border:none;
+           border-radius:6px;
+           cursor:pointer;">
+    Save Address
+  </button>
 
-        <button onclick="saveAddress()"
-          style="margin-top:10px;
-                 padding:10px 16px;
-                 background:#2e7d32;
-                 color:white;
-                 border:none;
-                 border-radius:6px;
-                 cursor:pointer;">
-          Save Address
-        </button>
-
-      </div>
+</div>
     `;
 
   })
@@ -337,6 +348,9 @@ function showAddressForm(btn) {
 // Save address
 async function saveAddress() {
 
+  // Clear old errors
+  document.querySelectorAll(".error").forEach(e => e.innerText = "");
+
   const fullName = document.getElementById("new-name").value.trim();
   const street = document.getElementById("new-address").value.trim();
   const city = document.getElementById("new-city").value.trim();
@@ -344,23 +358,59 @@ async function saveAddress() {
   const pincode = document.getElementById("new-pincode").value.trim();
   const country = document.getElementById("new-country").value.trim();
 
+  let valid = true;
 
-  if (!fullName || !street || !city || !state || !pincode || !country) {
-    alert("Please fill all fields");
-    return;
+  // ✅ Full Name
+  const nameRegex = /^[A-Za-z ]{2,}$/;
+  if (!nameRegex.test(fullName)) {
+    document.getElementById("nameError").innerText =
+      "Enter valid name (only letters)";
+    valid = false;
   }
 
+  // ✅ Street
+  if (street.length < 5) {
+    document.getElementById("streetError").innerText =
+      "Street must be at least 5 characters";
+    valid = false;
+  }
+
+  // ✅ City
+  if (!/^[A-Za-z ]{2,}$/.test(city)) {
+    document.getElementById("cityError").innerText =
+      "Enter valid city name";
+    valid = false;
+  }
+
+  // ✅ State
+  if (!/^[A-Za-z ]{2,}$/.test(state)) {
+    document.getElementById("stateError").innerText =
+      "Enter valid state name";
+    valid = false;
+  }
+
+  // ✅ Pincode (India)
+  if (!/^\d{6}$/.test(pincode)) {
+    document.getElementById("pincodeError").innerText =
+      "Enter valid 6-digit pincode";
+    valid = false;
+  }
+
+  // ✅ Country
+  if (!/^[A-Za-z ]{2,}$/.test(country)) {
+    document.getElementById("countryError").innerText =
+      "Enter valid country name";
+    valid = false;
+  }
+
+  if (!valid) return;
 
   try {
 
     const res = await fetch("/api/profile/update-address", {
-
       method: "PUT",
-
       headers: { "Content-Type": "application/json" },
-
       credentials: "include",
-
       body: JSON.stringify({
         fullName,
         street,
@@ -369,30 +419,22 @@ async function saveAddress() {
         pincode,
         country
       })
-
     });
 
-
     const data = await res.json();
-
 
     if (!res.ok) {
       alert(data.message || "Failed to save address");
       return;
     }
 
-
     alert("Address Updated Successfully");
     location.reload();
 
-
   } catch (err) {
-
     console.error(err);
     alert("Server error");
-
   }
-
 }
 
 </script>

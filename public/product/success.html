@@ -139,7 +139,7 @@ const order = JSON.parse(sessionStorage.getItem("lastOrder"));
 
 if (order && order.items && order.items.length > 0) {
 
-  // ✅ FIX: Ensure Order ID exists
+ 
   if (!order.orderId) {
     order.orderId = "ORD" + Date.now();
   }
@@ -179,12 +179,12 @@ if (order && order.items && order.items.length > 0) {
 
   document.getElementById("order-summary").innerHTML = html;
 
-  // ✅ CLEAR AFTER SHOWING
+ 
   sessionStorage.removeItem("lastOrder");
 
 } else {
   document.getElementById("order-summary").innerHTML =
-    "<p>No order data found.</p>";
+  "<p>No order data found.</p>";
 }
 
 </script>

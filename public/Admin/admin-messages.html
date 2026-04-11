@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contact Messages - Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <h2>Sakhi Admin</h2>
+      <ul class="nav">
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="admin-products.html">Products</a></li>
+        <li><a href="admin-orders.html">Orders</a></li>
+        <li><a href="admin-users.html">Users</a></li>
+        <li><a href="admin-messages.html" class="active">Messages</a></li>
+        <li><a href="admin-settings.html">Settings</a></li>
+        <li><a href="#" onclick="logout()">Logout</a></li>
+      </ul>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="top">
+        <h3>Contact Messages</h3>
+      </div>
+
+      <div id="list">Loading messages...</div>
+    </div>
+
+  </div>
+
+  <script type="module">
+  import { requireAuth, logout } from './admin.js';
+
+  requireAuth();
+  window.logout = logout;
+
+  const API = "http://localhost:3000/api/Contact";
+
+  async function fetchMessages() {
+    try {
+      const res = await fetch(API);
+
+      if (!res.ok) {
+        throw new Error("API not reachable");
+      }
+
+      const data = await res.json();
+
+      console.log("FULL API RESPONSE:", data);
+
+      // ✅ HANDLE YOUR RESPONSE FORMAT
+      return data.contacts || [];
+
+    } catch (err) {
+      console.error("FETCH ERROR:", err);
+      document.getElementById("list").innerHTML =
+        "<p style='color:red'>Server not running or API error</p>";
+      return [];
+    }
+  }
+
+  function bindList(messages) {
+    const container = document.getElementById("list");
+
+    if (!messages || messages.length === 0) {
+      container.innerHTML = "<p>No messages found</p>";
+      return;
+    }
+
+    let html = `
+      <table>
+        <tr>
+          <th>Sr.</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Message</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+    `;
+
+    messages.forEach((m, i) => {
+      html += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${m.name}</td>
+          <td>${m.email}</td>
+          <td>${m.phone}</td>
+          <td>${m.message}</td>
+          <td>${new Date(m.createdAt).toLocaleString()}</td>
+          <td>
+            <button class="btn secondary" onclick="deleteMsg('${m._id}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += "</table>";
+    container.innerHTML = html;
+  }
+
+  window.deleteMsg = async (id) => {
+    if (!confirm("Delete this message?")) return;
+
+    try {
+      await fetch(`${API}/${id}`, { method: "DELETE" });
+      load();
+    } catch {
+      alert("Delete failed");
+    }
+  };
+
+  async function load() {
+    const messages = await fetchMessages();
+    bindList(messages);
+  }
+
+  load();
+</script>
+</body>
+</html

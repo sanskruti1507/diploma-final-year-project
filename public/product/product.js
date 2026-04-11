@@ -1136,7 +1136,7 @@ addToCartBtn.addEventListener("click", async () => {
       headers: {
         "Content-Type": "application/json"
       },
-      credentials: "include",   // 🔥 VERY IMPORTANT
+      credentials: "include",   
       body: JSON.stringify({
         productId: item.id,
         name: item.name,
@@ -1189,7 +1189,6 @@ orderNowBtn.addEventListener("click", () => {
   const item = getCurrentProductConfiguration();
   if (!item) return;
 
-  // ✅ Save only for checkout (NOT cart)
   sessionStorage.setItem("directOrder", JSON.stringify({
     productId: item.id,
     name: item.name,
