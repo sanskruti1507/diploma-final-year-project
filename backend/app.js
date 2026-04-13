@@ -62,6 +62,7 @@ app.use("/api/checkout", checkoutRoutes);
 app.use("/api", paymentRoutes);
 app.use(adminRoutes);
 app.use(productRoutes);
+app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")));
 
 // CONTACT ROUTE (FIXED)
 app.use("/api", contactRoutes);

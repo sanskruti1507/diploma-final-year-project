@@ -60,7 +60,16 @@
       saveBtn.disabled = true;
       // collect images as array (split by newline or comma)
       const rawImgs = document.getElementById('pimages').value || '';
-      const imgs = rawImgs.split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean);
+     const imgs = rawImgs
+  .split(/\r?\n|,/)
+  .map(s => s.trim())
+  .filter(Boolean)
+  .map(url => {
+    if (!url.startsWith('http')) {
+      return `https://via.placeholder.com/${url}`;
+    }
+    return url;
+  });
       const data = { name:document.getElementById('pname').value.trim(), price:Number(document.getElementById('pprice').value) || 0, category:document.getElementById('pcat').value.trim(), images: imgs, image: imgs[0] || '', stock:Number(document.getElementById('pstock').value) || 0, description:document.getElementById('pdesc').value.trim() };
       try{
         let res;

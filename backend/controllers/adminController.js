@@ -222,3 +222,21 @@ export const importStaticProducts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const uploadImage = (req, res) => {
+  try {
+    // check file
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // return image URL
+    res.json({
+      url: `/uploads/${req.file.filename}`
+    });
+
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
